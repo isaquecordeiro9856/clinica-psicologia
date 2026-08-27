@@ -1,10 +1,22 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('psi@clinica.app');
   const [password, setPassword] = useState('Senha123!');
   const [msg, setMsg] = useState('');
+
+  function redirectByRole(role: string) {
+    const map: Record<string, string> = {
+      psychologist: '/psicologa/dashboard',
+      secretary: '/psicologa/dashboard',
+      patient: '/paciente/agenda',
+      admin: '/psicologa/dashboard',
+    };
+    router.push(map[role] ?? '/');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,7 +31,9 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message ?? 'Falha no login');
       localStorage.setItem('accessToken', data.data.accessToken);
-      setMsg(`OK! Token salvo. Role: ${data.data.user.role}`);
+      localStorage.setItem('userRole', data.data.user.role);
+      setMsg(`OK! Token salvo. Role: ${data.data.user.role} — redirecionando...`);
+      setTimeout(() => redirectByRole(data.data.user.role), 500);
     } catch (err) {
       setMsg((err as Error).message);
     }
