@@ -1,0 +1,1 @@
+﻿export default function ProntuarioPage() { return <main className='p-6'><h1 className='text-2xl font-bold'>Prontuário</h1><p className='text-sm text-muted-foreground'>/psicologa/prontuario — acesso restrito, criptografia AES-256-GCM.</p></main> }

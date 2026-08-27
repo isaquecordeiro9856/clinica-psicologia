@@ -1,0 +1,43 @@
+# Deps
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+.next/
+out/
+build/
+.turbo/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma
+prisma/migrations/
+
+# Uploads local
+uploads/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Docker
+.docker/
+
+# Misc
+*.tsbuildinfo

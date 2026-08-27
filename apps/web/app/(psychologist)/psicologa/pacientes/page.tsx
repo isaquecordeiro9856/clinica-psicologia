@@ -1,0 +1,1 @@
+﻿export default function PacientesPage() { return <main className='p-6'><h1 className='text-2xl font-bold'>Pacientes</h1><p className='text-sm text-muted-foreground'>/psicologa/pacientes — lista com busca.</p></main> }

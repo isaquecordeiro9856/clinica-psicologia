@@ -1,0 +1,1 @@
+﻿export default function AgendaPacientePage() { return <main className='p-6'><h1 className='text-2xl font-bold'>Minha agenda</h1><p className='text-sm text-muted-foreground'>/paciente/agenda — portal do paciente.</p></main> }

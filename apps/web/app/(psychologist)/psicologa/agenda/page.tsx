@@ -1,0 +1,1 @@
+﻿export default function AgendaPage() { return <main className='p-6'><h1 className='text-2xl font-bold'>Agenda — Psicóloga</h1><p className='text-sm text-muted-foreground'>/psicologa/agenda — gestão de disponibilidade.</p></main> }
