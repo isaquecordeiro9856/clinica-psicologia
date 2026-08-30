@@ -1,240 +1,42 @@
-'use client';
+'use client'
 
-import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { useTodayAppointments } from '@/hooks/use-appointments';
-import { usePatients } from '@/hooks/use-patients';
-import { useFinancialSummary } from '@/hooks/use-billing';
-import { usePolling } from '@/hooks/use-polling';
-import { apiFetch } from '@/lib/api';
-import { StatusDot } from '@/components/shared/status-badge';
-import {
-  Calendar, Users, DollarSign, Clock, Plus, ArrowRight,
-  CheckCircle2, AlertTriangle, FileText, UserPlus, Loader2,
-} from 'lucide-react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import Link from 'next/link'
+import { ArrowUpRight, Check, ChevronRight, CircleDollarSign, Clock3, FileText, Plus, Sparkles, TrendingUp, UserRound, UsersRound } from 'lucide-react'
+import { appointments, activities, patients, tasks, weeklyRevenue } from '@/lib/mock-clinic'
 
-interface Stats {
-  todayAppointments: number;
-  completedToday: number;
-  pendingToday: number;
-  totalPatients: number;
-  pendingBillings: number;
-  totalRevenue: number;
+const tone: Record<string, string> = {
+  teal: 'bg-teal-500/10 text-teal-600 dark:text-teal-300',
+  blue: 'bg-sky-500/10 text-sky-600 dark:text-sky-300',
+  violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-300',
+  amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-300',
+  rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-300',
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [statsError, setStatsError] = useState<string | null>(null);
-
-  const fetchStats = useCallback(() => {
-    apiFetch<{ data: Stats }>('/reports/dashboard')
-      .then((r) => { setStats(r.data); setStatsError(null); })
-      .catch((err) => setStatsError((err as Error).message))
-      .finally(() => setStatsLoading(false));
-  }, []);
-
-  useEffect(() => { fetchStats(); }, [fetchStats]);
-  usePolling(fetchStats, 60000);
-
-  const { data: appointments, loading: appointmentsLoading } = useTodayAppointments();
-  const { data: patients } = usePatients({ limit: 100 });
-  const { data: summary } = useFinancialSummary();
-
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  const name = user?.name?.split(' ')[0] ?? 'Psi';
-  const today = format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
-
-  const confirmed = appointments.filter((a) => a.status === 'confirmed').length;
-  const pending = appointments.filter((a) => a.status === 'pending_payment').length;
-  const completed = appointments.filter((a) => a.status === 'completed').length;
-  const activePatients = patients.filter((p) => p.status === 'active').length;
-  const nextApt = appointments.find((a) => a.status !== 'completed' && a.status !== 'cancelled');
-
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
   return (
-    <div className="animate-fade-in">
-      {/* Hero */}
-      <div className="px-8 pt-8 pb-6">
-        <p className="text-sm capitalize" style={{ color: 'var(--fg-muted)' }}>{today}</p>
-        <h1 className="text-3xl font-bold mt-1">{greeting}, <span style={{ color: 'var(--accent)' }}>{name}</span></h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--fg-muted)' }}>
-          {appointmentsLoading ? (
-            <span className="inline-flex items-center gap-1.5"><Loader2 className="h-3 w-3 animate-spin" /> Carregando agenda...</span>
-          ) : appointments.length === 0 ? (
-            'Nenhuma consulta agendada para hoje.'
-          ) : (
-            `${appointments.length} consulta${appointments.length > 1 ? 's' : ''} no dia. ${nextApt ? `Próxima às ${format(new Date(nextApt.startAt), 'HH:mm')}.` : ''}`
-          )}
-        </p>
+    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 p-5 md:p-8">
+      <section className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        <div>
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground"><Sparkles className="size-3.5 text-primary" /> terça-feira, 27 de agosto de 2024</div>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{greeting}, <span className="text-primary">Dra. Helena.</span></h1>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Aqui está o resumo da sua clínica. Você tem <strong className="font-medium text-foreground">5 consultas</strong> programadas para hoje.</p>
+        </div>
+        <div className="flex gap-2"><Link href="/psicologa/agenda" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"><Plus className="size-4" /> Nova consulta</Link><Link href="/psicologa/pacientes" className="inline-flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 text-sm font-medium transition hover:bg-muted"><UserRound className="size-4" /> Paciente</Link></div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[['Receita do mês','R$ 12.480','+18,4%','text-emerald-600','bg-emerald-500/10',CircleDollarSign],['Pacientes ativos','42','+6 este mês','text-sky-600','bg-sky-500/10',UsersRound],['Consultas realizadas','86','94% de presença','text-violet-600','bg-violet-500/10',Check],['Pendências','R$ 640','3 pagamentos','text-amber-600','bg-amber-500/10',Clock3]].map(([label,value,meta,color,bg,Icon]) => <div key={label as string} className="rounded-2xl border bg-card p-4 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-xs text-muted-foreground">{label as string}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value as string}</p></div><div className={`rounded-xl p-2.5 ${bg as string} ${color as string}`}><Icon className="size-4" /></div></div><p className={`mt-3 flex items-center gap-1 text-xs ${color as string}`}><TrendingUp className="size-3" /> {meta as string}</p></div>)}
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+        <section className="rounded-2xl border bg-card shadow-sm"><div className="flex items-center justify-between border-b p-5"><div><h2 className="font-semibold">Agenda de hoje</h2><p className="mt-1 text-xs text-muted-foreground">27 de agosto · 5 compromissos</p></div><Link href="/psicologa/agenda" className="flex items-center gap-1 text-xs font-medium text-primary">Ver agenda <ArrowUpRight className="size-3.5" /></Link></div><div className="divide-y">{appointments.map((apt) => <Link href="/psicologa/agenda" key={apt.id} className="group flex items-center gap-4 p-4 transition hover:bg-muted/40"><div className="w-12 text-center"><p className="text-sm font-semibold tabular-nums">{apt.time}</p><p className="text-[10px] text-muted-foreground">{apt.end}</p></div><div className={`size-10 rounded-xl ${tone[apt.color]} flex items-center justify-center text-xs font-semibold`}>{apt.initials}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{apt.patient}</p><p className="mt-1 text-xs text-muted-foreground">{apt.type}</p></div><span className={`hidden rounded-full px-2.5 py-1 text-[10px] font-medium sm:inline-flex ${apt.status === 'realizada' ? 'bg-muted text-muted-foreground' : apt.status === 'pendente' ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'}`}>{apt.status}</span><ChevronRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5" /></Link>)}</div></section>
+
+        <section className="rounded-2xl border bg-card p-5 shadow-sm"><div className="flex items-center justify-between"><div><h2 className="font-semibold">Receita mensal</h2><p className="mt-1 text-xs text-muted-foreground">Agosto 2024</p></div><span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">+18,4%</span></div><div className="mt-7 flex h-40 items-end gap-3">{weeklyRevenue.map((item, index) => <div key={item.day} className="flex flex-1 flex-col items-center gap-2"><div className="relative flex w-full items-end justify-center" style={{ height: '120px' }}><div className={`w-full max-w-9 rounded-t-lg transition hover:opacity-80 ${index === 3 ? 'bg-primary' : 'bg-primary/15'}`} style={{ height: `${(item.value / 1600) * 100}%` }} /></div><span className="text-[10px] text-muted-foreground">{item.day}</span></div>)}</div><div className="mt-5 flex items-center justify-between border-t pt-4"><span className="text-xs text-muted-foreground">Total recebido</span><span className="text-lg font-semibold">R$ 12.480,00</span></div></section>
       </div>
 
-      {/* Error banner */}
-      {statsError && (
-        <div className="mx-8 mb-4 rounded-lg border px-4 py-3 text-sm" style={{ borderColor: 'var(--danger)', background: 'rgba(239,68,68,0.05)', color: 'var(--danger)' }}>
-          Erro ao carregar estatísticas: {statsError}
-          <button onClick={fetchStats} className="ml-2 underline font-medium">Tentar novamente</button>
-        </div>
-      )}
-
-      {/* Metrics row */}
-      <div className="px-8 pb-6">
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {[
-            { label: 'Consultas', value: stats?.todayAppointments ?? 0, icon: Calendar, color: 'var(--indigo)' },
-            { label: 'Confirmadas', value: confirmed, icon: CheckCircle2, color: 'var(--emerald)' },
-            { label: 'Pendentes', value: pending, icon: Clock, color: 'var(--amber)' },
-            { label: 'Pacientes', value: activePatients, icon: Users, color: 'var(--violet)' },
-            { label: 'Receita', value: `R$ ${(summary?.totalRevenue ?? 0).toLocaleString('pt-BR')}`, icon: DollarSign, color: 'var(--teal)' },
-            { label: 'Pendências', value: `R$ ${(summary?.pendingAmount ?? 0).toLocaleString('pt-BR')}`, icon: AlertTriangle, color: 'var(--rose)' },
-          ].map((m) => (
-            <div key={m.label} className="metric-pill shrink-0 min-w-[160px]">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${m.color}15` }}>
-                <m.icon className="h-4 w-4" style={{ color: m.color }} />
-              </div>
-              <div>
-                <p className="text-[11px] font-medium" style={{ color: 'var(--fg-muted)' }}>{m.label}</p>
-                <p className="text-lg font-bold leading-tight">{m.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="px-8 pb-8">
-        <div className="flex gap-6" style={{ minHeight: 'calc(100vh - 320px)' }}>
-          {/* Left: Today's timeline */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold">Agenda de hoje</h2>
-              <Link href="/psicologa/agenda" className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--accent)' }}>
-                Ver completa <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-
-            {appointmentsLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
-                ))}
-              </div>
-            ) : appointments.length === 0 ? (
-              <div className="record-card flex flex-col items-center py-12">
-                <Calendar className="h-8 w-8 mb-3" style={{ color: 'var(--fg-faint)' }} />
-                <p className="text-sm font-medium">Agenda livre</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--fg-muted)' }}>Nenhuma consulta para hoje.</p>
-                <Link href="/psicologa/agenda" className="mt-4 rounded-lg px-4 py-2 text-xs font-medium text-white" style={{ background: 'var(--accent)' }}>
-                  Abrir agenda
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {appointments.map((apt, i) => {
-                  const time = format(new Date(apt.startAt), 'HH:mm');
-                  const end = format(new Date(apt.endAt), 'HH:mm');
-                  const isNext = i === 0 && apt.status !== 'completed';
-                  return (
-                    <Link
-                      key={apt.id}
-                      href="/psicologa/agenda"
-                      className="record-card flex items-center gap-4 group cursor-pointer"
-                      style={isNext ? { borderColor: 'var(--accent)', background: 'rgba(14,165,233,0.03)' } : {}}
-                    >
-                      <div className="w-16 text-center shrink-0">
-                        <p className="text-sm font-bold tabular-nums">{time}</p>
-                        <p className="text-[10px]" style={{ color: 'var(--fg-faint)' }}>{end}</p>
-                      </div>
-                      <div className="h-8 w-px" style={{ background: 'var(--border-subtle)' }} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">{apt.patient?.name ?? 'Paciente'}</p>
-                          {isNext && (
-                            <span className="text-[9px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5" style={{ background: 'rgba(14,165,233,0.1)', color: 'var(--accent)' }}>
-                              Próxima
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--fg-muted)' }}>
-                          {apt.service?.name ?? 'Consulta'} · {apt.service?.durationMinutes ?? 50}min
-                        </p>
-                      </div>
-                      <StatusDot status={apt.status} />
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Right: Side panel */}
-          <div className="w-80 shrink-0 space-y-5">
-            {/* Quick actions */}
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--fg-faint)' }}>Ações rápidas</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { icon: UserPlus, label: 'Novo paciente', href: '/psicologa/pacientes', color: 'var(--violet)' },
-                  { icon: Plus, label: 'Agendar', href: '/psicologa/agenda', color: 'var(--accent)' },
-                  { icon: FileText, label: 'Prontuário', href: '/psicologa/prontuario', color: 'var(--teal)' },
-                  { icon: DollarSign, label: 'Cobrança', href: '/psicologa/financeiro', color: 'var(--amber)' },
-                ].map((a) => (
-                  <Link key={a.label} href={a.href} className="record-card flex items-center gap-2.5 group">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${a.color}12` }}>
-                      <a.icon className="h-3.5 w-3.5" style={{ color: a.color }} />
-                    </div>
-                    <span className="text-xs font-medium">{a.label}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Today summary */}
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--fg-faint)' }}>Resumo</h3>
-              <div className="record-card space-y-2.5">
-                {[
-                  { label: 'Total', value: stats?.todayAppointments ?? 0, color: 'var(--fg)' },
-                  { label: 'Confirmadas', value: confirmed, color: 'var(--emerald)' },
-                  { label: 'Pendentes', value: pending, color: 'var(--amber)' },
-                  { label: 'Realizadas', value: completed, color: 'var(--indigo)' },
-                ].map((r) => (
-                  <div key={r.label} className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: 'var(--fg-muted)' }}>{r.label}</span>
-                    <span className="text-sm font-bold" style={{ color: r.color }}>{r.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent patients */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--fg-faint)' }}>Pacientes</h3>
-                <Link href="/psicologa/pacientes" className="text-[11px] font-medium" style={{ color: 'var(--accent)' }}>Ver todos</Link>
-              </div>
-              <div className="space-y-1">
-                {patients.filter((p) => p.status === 'active').slice(0, 5).map((p) => (
-                  <Link key={p.id} href="/psicologa/pacientes" className="record-card flex items-center gap-3 py-2.5 px-3">
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ background: 'var(--violet)', color: 'white' }}>
-                      {p.name?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '??'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{p.name ?? 'Sem nome'}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--fg-faint)' }}>Ativo</p>
-                    </div>
-                    <StatusDot status={p.status ?? 'active'} />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="grid gap-6 xl:grid-cols-[1fr_1fr_0.9fr]"><section className="rounded-2xl border bg-card p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">Tarefas pendentes</h2><Link href="/psicologa/tarefas" className="text-xs text-primary">Ver todas</Link></div><div className="flex flex-col gap-3">{tasks.map((task) => <div key={task.id} className="flex items-center gap-3"><div className={`flex size-5 shrink-0 items-center justify-center rounded-md border ${task.done ? 'border-primary bg-primary text-primary-foreground' : ''}`}>{task.done && <Check className="size-3" />}</div><div className="min-w-0 flex-1"><p className={`truncate text-sm ${task.done ? 'text-muted-foreground line-through' : ''}`}>{task.title}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{task.due} · prioridade {task.priority.toLowerCase()}</p></div></div>)}</div></section><section className="rounded-2xl border bg-card p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">Pacientes recentes</h2><Link href="/psicologa/pacientes" className="text-xs text-primary">Ver todos</Link></div><div className="flex flex-col gap-3">{patients.slice(0,3).map((patient) => <Link href="/psicologa/pacientes" key={patient.id} className="flex items-center gap-3 rounded-xl p-1 transition hover:bg-muted"><div className={`flex size-9 items-center justify-center rounded-xl text-xs font-semibold ${tone[patient.color]}`}>{patient.initials}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{patient.name}</p><p className="text-[11px] text-muted-foreground">{patient.lastSession}</p></div><ChevronRight className="size-4 text-muted-foreground" /></Link>)}</div></section><section className="rounded-2xl border bg-card p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">Atividade recente</h2><FileText className="size-4 text-muted-foreground" /></div><div className="flex flex-col gap-4">{activities.map((activity) => <div key={activity.text} className="flex gap-3"><div className="mt-1 size-2 rounded-full bg-primary" /><div><p className="text-sm">{activity.text}</p><p className="mt-1 text-[11px] text-muted-foreground">{activity.detail}</p></div></div>)}</div></section></div>
     </div>
-  );
+  )
 }

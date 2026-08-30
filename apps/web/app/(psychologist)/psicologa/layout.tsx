@@ -9,7 +9,7 @@ export default function PsicologaLayout({ children }: { children: React.ReactNod
   return (
     <AuthGuard>
       <ErrorBoundary>
-        <div className="flex h-screen overflow-hidden bg-[var(--bg)]">
+        <div className="flex h-screen overflow-hidden bg-background">
           <Sidebar />
           <div className="flex flex-1 flex-col overflow-hidden">
             <TopBar />
