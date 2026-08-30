@@ -1,24 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
-    --radius: 0.5rem;
+    --bg: #fafafa;
+    --bg-subtle: #f5f5f5;
+    --fg: #0a0a0a;
+    --fg-muted: #737373;
+    --fg-faint: #a3a3a3;
+    --border: #e5e5e5;
+    --border-subtle: #f0f0f0;
+    --primary: #18181b;
+    --primary-fg: #fafafa;
+    --accent: #0ea5e9;
+    --accent-fg: #ffffff;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-overlay: rgba(0,0,0,0.06);
+    --ring: rgba(24,24,27,0.15);
+    --radius: 8px;
+    --sidebar-bg: #18181b;
+    --sidebar-fg: #a1a1aa;
+    --sidebar-active: #fafafa;
+    --sidebar-hover: rgba(255,255,255,0.06);
+    --sidebar-accent: #0ea5e9;
+
+    /* Rich palette for clinical contexts */
+    --violet: #8b5cf6;
+    --indigo: #6366f1;
+    --teal: #14b8a6;
+    --rose: #f43f5e;
+    --amber: #f59e0b;
+    --emerald: #10b981;
+    --sky: #0ea5e9;
+    --slate: #64748b;
   }
+
+  .dark {
+    --bg: #0a0a0a;
+    --bg-subtle: #171717;
+    --fg: #fafafa;
+    --fg-muted: #a3a3a3;
+    --fg-faint: #525252;
+    --border: #262626;
+    --border-subtle: #1f1f1f;
+    --primary: #fafafa;
+    --primary-fg: #0a0a0a;
+    --accent: #38bdf8;
+    --accent-fg: #0a0a0a;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --surface: #1a1a1a;
+    --surface-raised: #222222;
+    --surface-overlay: rgba(255,255,255,0.08);
+    --ring: rgba(255,255,255,0.15);
+    --sidebar-bg: #0a0a0a;
+    --sidebar-fg: #737373;
+    --sidebar-active: #fafafa;
+    --sidebar-hover: rgba(255,255,255,0.06);
+    --sidebar-accent: #38bdf8;
+
+    --violet: #a78bfa;
+    --indigo: #818cf8;
+    --teal: #2dd4bf;
+    --rose: #fb7185;
+    --amber: #fcd34d;
+    --emerald: #34d399;
+    --sky: #38bdf8;
+    --slate: #94a3b8;
+  }
+
+  /* shadcn/ui compatibility aliases — NOT self-referencing */
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --card: var(--surface);
+  --card-foreground: var(--fg);
+  --popover: var(--surface);
+  --popover-foreground: var(--fg);
+  --secondary: var(--bg-subtle);
+  --secondary-foreground: var(--fg);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--fg-muted);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --input: var(--border);
 }
+
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 { @apply font-semibold tracking-tight; }
+}
+
+@layer components {
+  .rail-nav-item {
+    @apply relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-150;
+    color: var(--sidebar-fg);
+  }
+  .rail-nav-item:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  .rail-nav-item[data-active="true"] {
+    background: var(--sidebar-hover);
+    color: var(--sidebar-active);
+  }
+  .rail-nav-item[data-active="true"]::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: var(--sidebar-accent);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .metric-pill {
+    @apply flex items-center gap-3 rounded-2xl border px-5 py-3.5 transition-all;
+    border-color: var(--border-subtle);
+    background: var(--surface);
+  }
+  .metric-pill:hover {
+    border-color: var(--border);
+  }
+
+  .split-panel-left {
+    @apply h-full overflow-hidden border-r flex flex-col;
+    border-color: var(--border-subtle);
+    background: var(--surface);
+  }
+  .split-panel-right {
+    @apply h-full overflow-y-auto flex-1;
+    background: var(--surface);
+  }
+
+  .record-card {
+    @apply rounded-xl border p-4 transition-all;
+    border-color: var(--border-subtle);
+    background: var(--surface);
+  }
+  .record-card:hover {
+    border-color: var(--border);
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin { scrollbar-width: thin; }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
 }

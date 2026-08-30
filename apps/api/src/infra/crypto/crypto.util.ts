@@ -3,12 +3,28 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'crypt
 const ALGO = 'aes-256-gcm';
 const IV_LEN = 12;
 
+function getEncryptionKey(): Buffer {
+  const key = process.env.ENCRYPTION_MASTER_KEY;
+  if (!key) {
+    throw new Error('ENCRYPTION_MASTER_KEY environment variable is required (hex string, 64 chars)');
+  }
+  return Buffer.from(key, 'hex');
+}
+
+function getHmacPepper(): string {
+  const pepper = process.env.ENCRYPTION_HMAC_PEPPER;
+  if (!pepper) {
+    throw new Error('ENCRYPTION_HMAC_PEPPER environment variable is required');
+  }
+  return pepper;
+}
+
 /**
  * Criptografia de campo AES-256-GCM com chave mestra (ENCRYPTION_MASTER_KEY hex 64 chars).
  * MVP: usa chave única. Fase 2: envelope com DEK por paciente.
  */
 export function encrypt(plaintext: string): string {
-  const key = Buffer.from(process.env.ENCRYPTION_MASTER_KEY ?? '0'.repeat(64), 'hex');
+  const key = getEncryptionKey();
   const iv = randomBytes(IV_LEN);
   const cipher = createCipheriv(ALGO, key, iv);
   const enc = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
@@ -18,7 +34,7 @@ export function encrypt(plaintext: string): string {
 }
 
 export function decrypt(ciphertext: string): string {
-  const key = Buffer.from(process.env.ENCRYPTION_MASTER_KEY ?? '0'.repeat(64), 'hex');
+  const key = getEncryptionKey();
   const [ivB64, tagB64, dataB64] = ciphertext.split(':');
   const iv = Buffer.from(ivB64, 'base64');
   const tag = Buffer.from(tagB64, 'base64');
@@ -30,10 +46,11 @@ export function decrypt(ciphertext: string): string {
 }
 
 export function hmac(value: string): string {
-  const pepper = process.env.ENCRYPTION_HMAC_PEPPER ?? 'pepper-dev';
+  const pepper = getHmacPepper();
   return createHmac('sha256', pepper).update(value).digest('hex');
 }
 
 export function hashContent(content: string): string {
-  return createHmac('sha256', 'audit').update(content).digest('hex');
+  const pepper = getHmacPepper();
+  return createHmac('sha256', pepper).update(content).digest('hex');
 }

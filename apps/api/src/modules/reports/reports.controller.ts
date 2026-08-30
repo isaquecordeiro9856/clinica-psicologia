@@ -1,26 +1,37 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ReportsService } from './reports.service';
+import { ReportQueryDto } from './dto/report-query.dto';
 
 @ApiTags('reports')
 @Controller('reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('psychologist')
 @ApiBearerAuth('access-token')
 export class ReportsController {
   constructor(private reports: ReportsService) {}
 
+  @Get('dashboard')
+  @Roles('psychologist', 'secretary')
+  @ApiOperation({ summary: 'Estatísticas do dashboard' })
+  dashboard(@CurrentUser() user: { sub: string; role: string }) {
+    return this.reports.dashboard(user).then((data) => ({ data }));
+  }
+
   @Get('financial')
-  financial(@CurrentUser() user: { sub: string }, @Query() q: { from: string; to: string }) {
-    return this.reports.financial(user.sub, q.from, q.to).then((data) => ({ data }));
+  @Roles('psychologist')
+  @ApiOperation({ summary: 'Relatório financeiro' })
+  financial(@CurrentUser() user: { sub: string; role: string }, @Query() q: ReportQueryDto) {
+    return this.reports.financial(user, q.from, q.to).then((data) => ({ data }));
   }
 
   @Get('occupancy')
-  occupancy(@CurrentUser() user: { sub: string }, @Query() q: { from: string; to: string }) {
-    return this.reports.occupancy(user.sub, q.from, q.to).then((data) => ({ data }));
+  @Roles('psychologist')
+  @ApiOperation({ summary: 'Relatório de ocupação' })
+  occupancy(@CurrentUser() user: { sub: string; role: string }, @Query() q: ReportQueryDto) {
+    return this.reports.occupancy(user, q.from, q.to).then((data) => ({ data }));
   }
 }

@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -7,11 +7,23 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const logger = new Logger('Bootstrap');
+  const isProduction = process.env.NODE_ENV === 'production';
+  const allowedOrigins = [process.env.WEB_URL ?? 'http://localhost:3000'];
+  if (!isProduction) {
+    allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+  }
 
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false,
+  }));
   app.use(cookieParser());
   app.enableCors({
-    origin: process.env.WEB_URL ?? 'http://localhost:3000',
+    origin: [...new Set(allowedOrigins)],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
   });
 
@@ -39,7 +51,7 @@ async function bootstrap() {
 
   const port = process.env.API_PORT ? Number(process.env.API_PORT) : 3001;
   await app.listen(port);
-  console.log(`🚀 API running on http://localhost:${port}/api/v1`);
-  console.log(`📚 Docs on http://localhost:${port}/docs`);
+  logger.log(`API running on http://localhost:${port}/api/v1`);
+  logger.log(`Docs on http://localhost:${port}/docs`);
 }
 bootstrap();

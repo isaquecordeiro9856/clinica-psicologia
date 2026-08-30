@@ -1,11 +1,56 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
-  async financial(psychologistId: string, from: string, to: string) {
+  private async psychologistIdFor(user: { sub: string; role: string }) {
+    if (user.role === 'psychologist') {
+      const psychologist = await this.prisma.psychologist.findUnique({ where: { userId: user.sub }, select: { id: true } });
+      if (!psychologist) throw new NotFoundException('Perfil de psicóloga não encontrado');
+      return psychologist.id;
+    }
+    const secretary = await this.prisma.secretary.findUnique({ where: { userId: user.sub }, select: { psychologistId: true } });
+    if (!secretary) throw new NotFoundException('Perfil de secretária não encontrado');
+    return secretary.psychologistId;
+  }
+
+  async dashboard(user: { sub: string; role: string }) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const psychologistId = await this.psychologistIdFor(user);
+
+    const todayAppointments = await this.prisma.appointment.findMany({
+      where: {
+        psychologistId,
+        startAt: { gte: today, lt: tomorrow },
+      },
+    });
+
+    const totalPatients = await this.prisma.patient.count({ where: { psychologistId, deletedAt: null } });
+    const billingScope = { patient: { psychologistId } };
+    const pendingBillings = await this.prisma.billing.count({ where: { ...billingScope, status: 'pending' } as never });
+    const totalRevenue = await this.prisma.billing.aggregate({
+      where: { ...billingScope, status: 'paid' } as never,
+      _sum: { amount: true },
+    });
+
+    return {
+      todayAppointments: todayAppointments.length,
+      completedToday: todayAppointments.filter((a) => a.status === 'completed').length,
+      pendingToday: todayAppointments.filter((a) => a.status === 'pending_payment').length,
+      totalPatients,
+      pendingBillings,
+      totalRevenue: Number(totalRevenue._sum.amount ?? 0),
+    };
+  }
+
+  async financial(user: { sub: string; role: string }, from: string, to: string) {
+    const psychologistId = await this.psychologistIdFor(user);
     const billings = await this.prisma.billing.findMany({
       where: {
         patient: { psychologistId },
@@ -19,7 +64,8 @@ export class ReportsService {
     return { total, paid, pending, overdue, count: billings.length };
   }
 
-  async occupancy(psychologistId: string, from: string, to: string) {
+  async occupancy(user: { sub: string; role: string }, from: string, to: string) {
+    const psychologistId = await this.psychologistIdFor(user);
     const appointments = await this.prisma.appointment.findMany({
       where: { psychologistId, startAt: { gte: new Date(from), lte: new Date(to) } },
     });

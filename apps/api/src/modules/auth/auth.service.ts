@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../../infra/prisma/prisma.service';
@@ -6,12 +6,13 @@ import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
-    private prisma: PrismaService,
-    private jwt: JwtService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(JwtService) private readonly jwt: JwtService,
   ) {}
 
-  async register(dto: { email: string; password: string; name: string; role?: Role }) {
+  async register(dto: { email: string; password: string; name: string }) {
     const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (exists) throw new ConflictException('E-mail já cadastrado');
 
@@ -20,7 +21,7 @@ export class AuthService {
       data: {
         email: dto.email,
         passwordHash,
-        role: dto.role ?? Role.patient,
+        role: Role.patient,
       },
     });
 
@@ -34,11 +35,18 @@ export class AuthService {
   }
 
   async login(dto: { email: string; password: string }) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user) throw new UnauthorizedException('Credenciais inválidas');
-    const valid = await argon2.verify(user.passwordHash, dto.password);
-    if (!valid) throw new UnauthorizedException('Credenciais inválidas');
-    return this.signTokens(user);
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      if (!user) throw new UnauthorizedException('Credenciais inválidas');
+      const valid = await argon2.verify(user.passwordHash, dto.password);
+      if (!valid) throw new UnauthorizedException('Credenciais inválidas');
+      return this.signTokens(user);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Login failed: ${message}`, stack);
+      throw error;
+    }
   }
 
   private async signTokens(user: { id: string; email: string; role: Role }) {

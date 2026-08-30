@@ -1,20 +1,28 @@
-FROM node:22-alpine AS base
-RUN npm install -g pnpm@9.15.9
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY pnpm-workspace.yaml package.json turbo.json ./
-COPY apps/api/package.json ./apps/api/package.json
-COPY packages/shared/package.json ./packages/shared/package.json
-RUN pnpm install --frozen-lockfile || pnpm install
 
+FROM base AS deps
+RUN apk add --no-cache python3 make g++
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
+
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm --filter @repo/api db:generate
-RUN pnpm --filter @repo/api build
+RUN corepack enable pnpm && pnpm prisma generate && pnpm build
 
-FROM node:22-alpine AS runner
+FROM base AS runner
+RUN apk add --no-cache curl
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=base /app/apps/api/dist ./dist
-COPY --from=base /app/apps/api/package.json ./
-COPY --from=base /app/node_modules ./node_modules
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
+COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
+
+USER nestjs
 EXPOSE 3001
 CMD ["node", "dist/main.js"]

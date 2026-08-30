@@ -1,22 +1,29 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { NotificationsService } from './notifications.service';
+import { CreateNotificationDto } from './dto/create-notification.dto';
 
 @ApiTags('notifications')
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('psychologist', 'secretary')
 @ApiBearerAuth('access-token')
 export class NotificationsController {
   constructor(private svc: NotificationsService) {}
 
   @Get()
-  list(@Query() q: Record<string, string>) {
-    return this.svc.list(q).then((data) => ({ data }));
+  @ApiOperation({ summary: 'Listar notificações' })
+  list(@Query() q: { patientId?: string; status?: string }, @CurrentUser() user: { sub: string; role: string }) {
+    return this.svc.list(q, user).then((data) => ({ data }));
   }
 
   @Post()
-  enqueue(@Body() dto: { patientId: string; appointmentId?: string; channel: string; template: string }) {
-    return this.svc.enqueue(dto).then((data) => ({ data }));
+  @ApiOperation({ summary: 'Criar notificação' })
+  enqueue(@Body() dto: CreateNotificationDto, @CurrentUser() user: { sub: string; role: string }) {
+    return this.svc.enqueue(dto, user).then((data) => ({ data }));
   }
 }

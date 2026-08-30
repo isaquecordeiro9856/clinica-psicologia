@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: clinica
-      POSTGRES_PASSWORD: clinica123
+      POSTGRES_PASSWORD: Nm1GkgtrBvHXbiVvGmAfRw
       POSTGRES_DB: clinica_psicologia
       TZ: America/Sao_Paulo
     ports:
