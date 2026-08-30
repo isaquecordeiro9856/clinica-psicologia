@@ -57,9 +57,9 @@ export class ReportsService {
         createdAt: { gte: new Date(from), lte: new Date(to) },
       } as never,
     });
-    const total = billings.reduce((acc, b) => acc + Number(b.amount), 0);
-    const paid = billings.filter((b) => b.status === 'paid').reduce((acc, b) => acc + Number(b.amount), 0);
-    const pending = billings.filter((b) => b.status === 'pending').reduce((acc, b) => acc + Number(b.amount), 0);
+    const total = billings.reduce((acc: number, b: { amount: string | number }) => acc + Number(b.amount), 0);
+    const paid = billings.filter((b) => b.status === 'paid').reduce((acc: number, b: { amount: string | number }) => acc + Number(b.amount), 0);
+    const pending = billings.filter((b) => b.status === 'pending').reduce((acc: number, b: { amount: string | number }) => acc + Number(b.amount), 0);
     const overdue = billings.filter((b) => b.status === 'overdue').length;
     return { total, paid, pending, overdue, count: billings.length };
   }
