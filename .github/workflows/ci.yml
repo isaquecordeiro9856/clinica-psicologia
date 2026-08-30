@@ -37,6 +37,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
       - run: pnpm build
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
